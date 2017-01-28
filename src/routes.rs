@@ -16,6 +16,7 @@ use tokio_http2::http::{Request, Response, HttpProto};
 use tokio_http2::{StatusCode, Method};
 
 use http::*;
+use options::*;
 
 pub fn routes(req: Request, base_path: String) -> Response {
     match req.method() {
@@ -35,7 +36,7 @@ pub fn routes(req: Request, base_path: String) -> Response {
         },
         _ => {
             Response::new()
-                .with_header("Server", "lsioHTTPS")
+                .with_header("Server", "klaus")
                 .with_header("Content-Length", "0")
                 .with_status(StatusCode::NotImplemented)
         }

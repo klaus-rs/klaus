@@ -58,7 +58,6 @@ extern crate url;
 //extern crate filetime;
 extern crate toml;
 extern crate rustc_serialize;
-// extern crate multipart;
 extern crate mime_guess;
 extern crate daemonize;
 #[macro_use] extern crate log;
@@ -74,6 +73,8 @@ extern crate tokio_core;
 extern crate tokio_tls;
 extern crate native_tls;
 
+extern crate redis;
+
 use std::io;
 use std::env;
 use std::path::PathBuf;
@@ -88,7 +89,7 @@ use tokio_service::Service;
 use tokio_core::net::TcpStream;
 use tokio_tls::{TlsConnectorExt, TlsAcceptorExt};
 use tokio_http2::http::{Request, Response, HttpProto};
-use tokio_http2::{Router, Route, RouterBuilder, Method};
+use tokio_http2::{Router, Route, RouterBuilder, Method, StatusCode};
 use tokio_http2::logger::{Logger, LoggerLevel};
 
 use clap::Shell;
@@ -105,6 +106,8 @@ use lsio::config::ConfigFile;
 
 use routes::routes;
 use handlers::handlers;
+use options::Options;
+use rate_limiting::*;
 
 mod cli;
 mod config;
@@ -113,6 +116,9 @@ mod http;
 mod files;
 mod api;
 mod handlers;
+mod options;
+mod cache;
+mod rate_limiting;
 
 // Used for outbound S3 calls (if used).
 static DEFAULT_USER_AGENT: &'static str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
@@ -122,6 +128,8 @@ static DEFAULT_USER_AGENT: &'static str = concat!(env!("CARGO_PKG_NAME"), "/", e
 struct HttpService {
     /// Base path is used to hold the actual base directory location on the server of the request.
     base_path: String,
+    cache_master: Option<String>,  // Format of IP:<port> - port is optional and defaults to 6379
+    rate_limiting: bool,
 }
 
 // Could put this into service_fn closure later...
@@ -132,6 +140,19 @@ impl Service for HttpService {
     type Future = future::Ok<Response, io::Error>;
 
     fn call(&self, mut req: Request) -> Self::Future {
+
+        // Impose rate limiting here if enabled
+        if self.rate_limiting {
+            if rate_limited(&req, self.cache_master.clone()) {
+                return future::ok(
+                    Response::new()
+                        .with_header("Server", "klaus")
+                        .with_header("Content-Length", "0")
+                        .with_status(StatusCode::TooManyRequests)
+                );
+            }
+        }
+
         match req.handler() {
             Some(handler) => future::ok(handler(req, self.base_path.clone())),
             None => future::ok(routes(req, self.base_path.clone())),
@@ -150,6 +171,7 @@ fn main() {
     let mut is_bench: bool = false;
     let mut is_bucket_virtual: bool = true;
     let mut is_daemonize: bool = true;
+    let mut is_rate_limiting: bool = false;
 
     let matches = cli::build_cli(app, config_dir, &version).get_matches();
 
@@ -211,6 +233,12 @@ fn main() {
     let run_as_user = matches.value_of("run-as-user").unwrap_or("nobody");
     let run_in_group = matches.value_of("run-in-group").unwrap_or("daemon");
     let base_path = matches.value_of("base-path").unwrap_or("public"); // Default 'public' means 'public' is relative to this app's location.
+    let cache = matches.value_of("cache").unwrap_or("127.0.0.1:6379");
+    let rate = matches.value_of("rate");
+
+    if rate.is_some() {
+        is_rate_limiting = true;
+    }
 
     // Override some parameters when bench is specified...
     if bench.is_some() {
@@ -225,9 +253,9 @@ fn main() {
 
     // NOTE: May want to change the config name and location later...
     if config_dir.is_empty() {
-        config_file.push("/etc/lsio/config");
+        config_file.push("/etc/lsio/klaus.conf");
     } else {
-        config_file.push(&format!("{}/{}", config_dir, "config"));
+        config_file.push(&format!("{}/{}", config_dir, "klaus.conf"));
     }
 
     // Config file location has a default of /etc/lsio/config but it can be changed
@@ -324,6 +352,7 @@ fn main() {
     logger.write(LoggerLevel::Info, format!("Application started and listening at: {}, version: {}", addr, version.clone()));
 
     let base = base_path.clone().to_string();
+    let cache_master = cache.clone().to_string();
 
     /// TcpServer is the core of the server. It takes http_proto, number of cpus and HttpService as
     /// input and then begins it's magic!
@@ -336,6 +365,8 @@ fn main() {
         Ok(
             HttpService{
                 base_path: format!("{}", base),
+                rate_limiting: is_rate_limiting,
+                cache_master: Some(format!("{}", cache_master)),
             }
         )
     }); // Could do closure here instead of the full Service above

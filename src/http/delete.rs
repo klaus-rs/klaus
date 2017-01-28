@@ -81,12 +81,12 @@ fn delete(req: Request) -> Response {
 
     if has_payload {
         Response::new()
-            .with_header("Server", "lsioHTTPS")
+            .with_header("Server", "klaus")
             .with_header("Content-Length", "0")
             .with_status(StatusCode::Ok)
     } else {
         Response::new()
-            .with_header("Server", "lsioHTTPS")
+            .with_header("Server", "klaus")
             .with_header("Content-Length", "0")
             .with_status(StatusCode::BadRequest)
     }

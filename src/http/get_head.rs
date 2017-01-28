@@ -26,7 +26,7 @@ pub fn route(req: Request, base_path: String) -> Response {
     match req.path() {
         "" => {
             Response::new()
-                .with_header("Server", "lsioHTTPS")
+                .with_header("Server", "klaus")
                 .with_header("Content-Length", "0")
                 .with_status(StatusCode::NoContent)
         },
@@ -45,14 +45,14 @@ pub fn route(req: Request, base_path: String) -> Response {
                         Ok(file_body) => {
                             if verb == Method::Get {
                                 Response::new()
-                                    .with_header("Server", "lsioHTTPS")
+                                    .with_header("Server", "klaus")
                                     .with_header("Content-Length", &file_body.content_length.to_string())
                                     .with_header("Content-Type", &file_body.content_type)
                                     .with_body(file_body.body)
                                     .with_status(StatusCode::Ok)
                             } else {
                                 Response::new()
-                                    .with_header("Server", "lsioHTTPS")
+                                    .with_header("Server", "klaus")
                                     .with_header("Content-Length", &file_body.content_length.to_string())
                                     .with_header("Content-Type", &file_body.content_type)
                                     .with_status(StatusCode::Ok)
@@ -66,7 +66,7 @@ pub fn route(req: Request, base_path: String) -> Response {
                                 load_default(base_path, verb)
                              } else {
                                 Response::new()
-                                    .with_header("Server", "lsioHTTPS")
+                                    .with_header("Server", "klaus")
                                     .with_header("Content-Length", "0")
                                     .with_status(StatusCode::NotImplemented)
                             }
@@ -84,14 +84,14 @@ fn load_default(base_path: String, verb: Method) -> Response {
         Ok(file_body) => {
             if verb == Method::Get {
                 Response::new()
-                    .with_header("Server", "lsioHTTPS")
+                    .with_header("Server", "klaus")
                     .with_header("Content-Length", &file_body.content_length.to_string())
                     .with_header("Content-Type", &file_body.content_type)
                     .with_body(file_body.body)
                     .with_status(StatusCode::Ok)
             } else {
                 Response::new()
-                    .with_header("Server", "lsioHTTPS")
+                    .with_header("Server", "klaus")
                     .with_header("Content-Length", &file_body.content_length.to_string())
                     .with_header("Content-Type", &file_body.content_type)
                     .with_status(StatusCode::Ok)
@@ -99,7 +99,7 @@ fn load_default(base_path: String, verb: Method) -> Response {
         },
         Err(e) => {
             Response::new()
-                .with_header("Server", "lsioHTTPS")
+                .with_header("Server", "klaus")
                 .with_header("Content-Length", "0")
                 .with_status(StatusCode::NotFound)
         }

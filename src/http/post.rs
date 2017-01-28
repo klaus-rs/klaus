@@ -24,7 +24,6 @@ use rustc_serialize::base64::*;
 // use multipart::server::{Multipart, Entries, SaveResult};
 use tokio_http2::server::{Multipart, Entries, SaveResult};
 
-
 pub fn route(req: Request, base_path: String) -> Response {
     match req.path() {
         "/admin/settings" => {
@@ -107,12 +106,12 @@ fn post(req: Request, base_path: String) -> Response {
 
     if has_payload {
         Response::new()
-            .with_header("Server", "lsioHTTPS")
+            .with_header("Server", "klaus")
             .with_header("Content-Length", &format!("{}", content_lenth))
             .with_status(StatusCode::Ok)
     } else {
         Response::new()
-            .with_header("Server", "lsioHTTPS")
+            .with_header("Server", "klaus")
             .with_header("Content-Length", &format!("{}", content_lenth))
             .with_status(StatusCode::BadRequest)
     }

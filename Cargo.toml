@@ -1,6 +1,6 @@
 [package]
 name = "klaus"
-version = "0.1.7"
+version = "0.1.8"
 authors = ["Chris Jones"]
 license = "Apache-2.0"
 readme = "README.md"
@@ -38,3 +38,4 @@ tokio-service = "0.1"
 tokio-tls = "0"
 native-tls = "0"
 pretty_env_logger = "0"
+redis = { path = "../../lambdadb/redis-rs"}

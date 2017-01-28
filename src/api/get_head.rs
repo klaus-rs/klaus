@@ -28,7 +28,7 @@ pub fn route(req: Request, prefix: &str, header: &str) -> Response {
         },
         _ => {
             Response::new()
-                .with_header("Server", "lsioHTTPS")
+                .with_header("Server", "klaus")
                 .with_header("Content-Length", "0")
                 .with_status(StatusCode::NotImplemented)
         }
@@ -43,7 +43,7 @@ fn api(req: Request, prefix: &str, header: &str) -> Response {
     //req.urldecode(str::from_utf8(req.payload().unwrap_or("".as_bytes())).unwrap_or("")));
 
     Response::new()
-        .with_header("Server", "lsioHTTPS")
+        .with_header("Server", "klaus")
         .with_header("Content-Length", "0")
         .with_status(StatusCode::NotImplemented)
 }
